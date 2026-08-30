@@ -1,0 +1,73 @@
+{
+  "$schema": "rulealize/ruleset/v1",
+  "id": "Rulealize.RuleSet.Quota",
+  "version": "1.0.0",
+
+  // A bounded allowance: so many of something, and then no more.
+  //
+  // The smallest component that is worth holding, and the clearest case of what holding is
+  // for. A composite writes `held.quota.consume` nowhere — it writes its *own* input's guard
+  // against `rec.at($quota, "used")`, or it drives `consume` from `fires` so that doing the
+  // thing and spending the allowance are one transition.
+  //
+  // ── What is being counted is not in this document ──
+  //
+  // Nothing here names a unit. `allowed` is a number the state document supplies, and what one
+  // of them buys is the holder's business: an API call, a free delivery, a retry, a seat. The
+  // rule set is the domain and the state is the instance, so three quotas over three different
+  // things are three state documents and this one rule set.
+  //
+  // ── Why `reset` and not an expiry ──
+  //
+  // A quota that refilled itself would need a clock, and there is no time vocabulary in this
+  // ecosystem — `time` is a reserved namespace with nothing behind it. So refilling is an
+  // input, and *when* it happens is a decision its holder makes and can be read off the
+  // holder's document rather than inferred from a schedule nobody can see.
+  //
+  // It is also the more honest shape. A monthly allowance is a business rule about months,
+  // which is a thing the holder knows about and this document never could.
+
+  "requires": [
+    { "plugin": "Rulealize.Plugin.TypeSchema", "version": "^1.0" },
+    { "plugin": "Rulealize.Plugin.State",      "version": "^1.0" },
+    { "plugin": "Rulealize.Plugin.Comparison", "version": "^1.0" },
+    { "plugin": "Rulealize.Plugin.Arithmetic", "version": "^1.0" }
+  ],
+
+  "state": {
+    "schema": {
+      // How many are allowed between resets. The instance, not the domain.
+      "allowed": { "op": "type.int", "min": 0 },
+
+      // How many have gone. Never above `allowed`, because `consume` is the only thing that
+      // raises it and it is guarded on exactly that.
+      "used": { "op": "type.int", "min": 0 }
+    },
+
+    // Zero of zero: a quota nobody has said anything about allows nothing, which is the same
+    // answer `Request` gives with an empty `subjects`. A component opens where it opens, and a
+    // demonstration allowance written here would be forced on every document that holds it.
+    "initial": { "allowed": 0, "used": 0 }
+  },
+
+  "inputs": {
+    "consume": {
+      "when": { "op": "cmp.lt", "left": "$used", "right": "$allowed" },
+      "effects": [
+        { "op": "state.set", "path": "used", "value": { "op": "math.add", "of": ["$used", 1] } }
+      ]
+    },
+
+    // Guarded on there being something to reset, so that a quota already full offers one move
+    // rather than two that differ in nothing. An input that is always legal and sometimes
+    // changes nothing is an input a walk of this document has to explore twice.
+    "reset": {
+      "when": { "op": "cmp.gt", "left": "$used", "right": 0 },
+      "effects": [ { "op": "state.set", "path": "used", "value": 0 } ]
+    }
+  }
+
+  // No `terminal`. A quota does not end — it is exhausted, which is a state it leaves again
+  // the moment somebody resets it. A holder that wants an ending has one of its own, and
+  // `GetValidInputs` never consults a component's `terminal` anyway.
+}

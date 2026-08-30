@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    A package that distributes a document, so it carries no assembly at all. What each of the
+    four properties below is for is in the registry's guide:
+    https://github.com/reny-develop/Rulealize.Registry/blob/main/doc/publish.md
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+    <EnableDefaultItems>false</EnableDefaultItems>
+
+    <PackageId>Rulealize.RuleSet.Quota</PackageId>
+
+    <!--
+      One version, in two places that have to agree: this, and the `version` the document
+      declares. The fetch goes by this one and every `uses` constraint is answered by that
+      one, so a release where they differ downloads perfectly and satisfies nothing.
+    -->
+    <Version>1.0.0</Version>
+
+    <Authors>Reny</Authors>
+    <Description>A bounded allowance: so many of something, and then no more. A Rulealize rule set written to be held.</Description>
+    <PackageTags>rulealize;ruleset;quota;allowance</PackageTags>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryUrl>https://github.com/reny-develop/Rulealize.RuleSet.Quota</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="ruleset/*.json" Pack="true" PackagePath="ruleset/" />
+    <None Include="../../README.md" Pack="true" PackagePath="/" />
+  </ItemGroup>
+
+</Project>

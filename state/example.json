@@ -1,0 +1,6 @@
+{
+  "$schema": "rulealize/state/v1",
+  "ruleSet": "Rulealize.RuleSet.Quota@1.0.0",
+
+  "data": { "allowed": 3, "used": 1 }
+}
